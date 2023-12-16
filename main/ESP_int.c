@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/gpio.h"
 
 #define LED_PIN 2
@@ -13,6 +14,7 @@ QueueHandle_t interputQueue = NULL;
 
 static void gpio_interrupt_handler(void *args)
 {
+
     int pinNumber = (int)args;
     xQueueSendFromISR(interputQueue, &pinNumber, NULL);
 }
@@ -20,13 +22,15 @@ static void gpio_interrupt_handler(void *args)
 void LED_Control_Task(void *params)
 {
     int pinNumber, count = 1;
+    int state = 0;
     while (true)
     {
         if (xQueueReceive(interputQueue, &pinNumber, portMAX_DELAY))
         {
             state = !state;
             gpio_set_level(LED_PIN, state);
-            printf("GPIO %d was pressed %d times. The state is %d\n", pinNumber, count++, state);
+
+            //printf("GPIO %d was pressed %d times. The state is %d\n", pinNumber, count++, state);
         }
     }
 }
@@ -37,16 +41,19 @@ void Blink_Task(void *params)
     while(1)
     {
         gpio_set_level(BLINK_PIN,blink_state);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
         blink_state = !blink_state;
         gpio_set_level(BLINK_PIN,blink_state);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
         blink_state = !blink_state;
     }
 }
 
 void app_main()
 {
+    gpio_reset_pin(LED_PIN);
+    gpio_reset_pin(INPUT_PIN);
+    gpio_reset_pin(BLINK_PIN);
 
     gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
@@ -56,6 +63,7 @@ void app_main()
     gpio_set_intr_type(INPUT_PIN, GPIO_INTR_POSEDGE);
 
     gpio_set_direction(BLINK_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_level(BLINK_PIN,1);
 
     interputQueue = xQueueCreate(10, sizeof(int));
     xTaskCreate(LED_Control_Task, "LED_Control_Task", 2048, NULL, 1, NULL);
