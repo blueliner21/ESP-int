@@ -4,10 +4,10 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 
-#define LED_PIN 2
-#define INPUT_PIN 7
-#define BLINK_PIN 4
-
+#define LED_PIN GPIO_NUM_2
+#define INPUT_PIN GPIO_NUM_7
+#define BLINK_PIN GPIO_NUM_4
+//0x20
 
 int state = 0;
 QueueHandle_t interputQueue = NULL;
@@ -51,9 +51,11 @@ void Blink_Task(void *params)
 
 void app_main()
 {
+
     gpio_reset_pin(LED_PIN);
     gpio_reset_pin(INPUT_PIN);
     gpio_reset_pin(BLINK_PIN);
+
 
     gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
